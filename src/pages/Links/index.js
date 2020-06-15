@@ -1,25 +1,35 @@
-import React, { useState, Fragment } from "react";
+import React, { Fragment, useContext } from "react";
 import { Table, Tag, Button } from "antd";
+import { Context } from "./../../Context";
 
-import config from "../../config";
+import useModal from "./../../hooks/useModal";
+import { findIndex, remove } from "lodash";
 
-console.log(config);
+// import ModalTag from "./../../components/ModalTag";
+import ModalDelete from "./../../components/ModalDelete";
 
 const Links = () => {
-  const [tags] = useState([
-    {
-      key: "1",
-      name: "Mike",
-      url: "https://mauriciohernancabrera.github.io",
-      tags: ["Hola", "Mundo"],
-    },
-    {
-      key: "2",
-      name: "John",
-      url: "https://mauriciohernancabrera.github.io",
-      tags: ["Hola", "Mundo222"],
-    },
-  ]);
+  const { links, setLinks } = useContext(Context);
+  const { modal, setModal, onCancel } = useModal();
+
+  const onDeleteTag = (item) => {
+    const onOk = (data) => {
+      setModal({ ...modal });
+      const clone = links.slice();
+      remove(clone, (tag) => tag.key === data.key);
+      setLinks(clone);
+      onCancel();
+    };
+
+    setModal({
+      ...modal,
+      visible: "delete",
+      title: "Delete link",
+      onOk,
+      okText: "Delete",
+      data: item,
+    });
+  };
 
   const columns = [
     {
@@ -38,17 +48,10 @@ const Links = () => {
       key: "tags",
       render: (tags) => (
         <span>
-          {tags.map((tag) => {
-            let color = tag.length > 5 ? "geekblue" : "green";
-            if (tag === "loser") {
-              color = "volcano";
-            }
-            return (
-              <Tag color={color} key={tag}>
-                {tag.toUpperCase()}
-              </Tag>
-            );
-          })}
+          {tags.length === 0 && "-"}
+          {tags.map((tag) => (
+            <Tag key={tag}>{tag.toUpperCase()}</Tag>
+          ))}
         </span>
       ),
     },
@@ -58,13 +61,19 @@ const Links = () => {
       dataIndex: "actions",
       render: (_, item) => (
         <Fragment>
-          <Button size="small" style={{ "margin-right": "6px" }}>
+          <Button size="small" style={{ marginRight: "6px" }}>
             Copy
           </Button>
-          <Button size="small" style={{ "margin-right": "6px" }}>
+
+          <Button size="small" style={{ marginRight: "6px" }}>
             Edit
           </Button>
-          <Button size="small" style={{ "margin-right": "6px" }}>
+
+          <Button
+            size="small"
+            style={{ marginRight: "6px" }}
+            onClick={() => onDeleteTag(item)}
+          >
             Delete
           </Button>
         </Fragment>
@@ -72,7 +81,17 @@ const Links = () => {
     },
   ];
 
-  return <Table dataSource={tags} columns={columns} />;
+  return (
+    <Fragment>
+      <Table dataSource={links} columns={columns} />
+
+      <ModalDelete
+        {...modal}
+        visible={modal.visible === "delete"}
+        onCancel={onCancel}
+      />
+    </Fragment>
+  );
 };
 
 export default Links;
